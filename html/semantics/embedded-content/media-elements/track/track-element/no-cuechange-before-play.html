@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<title>Ensure that the 'cuechange' event is not fired before video playback has begun.</title>
+<script src="/common/media.js"></script>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script>
+async_test(function(t) {
+    let expected_events = ['load', 'canplaythrough'];
+    function eventCallback(event) {
+      let index = expected_events.indexOf(event.type);
+      assert_not_equals(index, -1);
+      expected_events.splice(index, 1);
+
+      if (expected_events.length == 0)
+        t.done();
+    }
+
+    let video = document.createElement('video');
+    video.src = getVideoURI('/media/movie_5');
+    video.preload = 'auto';
+
+    // Create a track element. The 'cuechange' event should not be fired.
+    let track = document.createElement('track');
+    track.oncuechange = _ => assert_unreached();
+    track.onload = t.step_func(eventCallback);
+    video.oncanplaythrough = t.step_func(eventCallback);
+
+    track.src = 'resources/captions-fast.vtt';
+    track.kind = 'captions';
+    track.default = true;
+    track.track.mode = 'showing';
+    video.appendChild(track);
+});
+</script>
